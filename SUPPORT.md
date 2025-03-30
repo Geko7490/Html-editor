@@ -1,4 +1,4 @@
-Support 💰
+ Support 💰
 If you like this project, you can donate with crypto:
-DOGE
+(DOGE)
 DEqtZ7sTiPxSASAzkPeKpLmvtSuMW6SsB4
