@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Ultimate Code Editor</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --panel-bg: #ffffff;
+            --header-bg: #6c5ce7;
+            --border-color: #ddd;
+            --button-bg: #6c5ce7;
+            --button-hover: #5649c0;
+            --editor-bg: #fafafa;
+            --preview-bg: #ffffff;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode {
+            --bg-color: #1a1a2e;
+            --text-color: #e6e6e6;
+            --panel-bg: #16213e;
+            --header-bg: #0f3460;
+            --border-color: #2d4059;
+            --button-bg: #e94560;
+            --button-hover: #c1334f;
+            --editor-bg: #1a1a2e;
+            --preview-bg: #0f3460;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            transition: background-color 0.5s ease, color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.8s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #e94560, #6c5ce7, #00b894);
+            animation: rainbow 8s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            animation: fadeIn 1s ease-out 0.2s backwards;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .run-btn {
+            background-color: var(--button-bg);
+            color: white;
+        }
+
+        .run-btn:hover {
+            background-color: var(--button-hover);
+            animation: pulse 1.5s infinite;
+        }
+
+        .mode-toggle {
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+        }
+
+        .editor-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .editor-panel {
+            flex: 1;
+            min-width: 300px;
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.6s ease-out;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+
+        .editor-panel:nth-child(1) { animation-delay: 0.3s; }
+        .editor-panel:nth-child(2) { animation-delay: 0.5s; }
+        .editor-panel:nth-child(3) { animation-delay: 0.7s; }
+
+        .editor-header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .editor-header i {
+            font-size: 1.2rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            border: none;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            background-color: var(--editor-bg);
+            color: var(--text-color);
+            resize: vertical;
+            border-radius: 0 0 10px 10px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            outline: 2px solid var(--button-bg);
+            outline-offset: -2px;
+        }
+
+        .preview-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 1s ease-out 0.9s backwards;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        #preview {
+            width: 100%;
+            height: 400px;
+            border: 2px solid var(--border-color);
+            background-color: var(--preview-bg);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .floating-buttons {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .floating-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1) translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .theme-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .editor-container {
+                flex-direction: column;
+            }
+            
+            .editor-panel {
+                min-width: 100%;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Particle animation */
+        .particle {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Loading animation */
+        .loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+
+        .loader.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #6c5ce7;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <h2>Running Code...</h2>
+    </div>
+
+    <div class="theme-switcher">
+        <button class="theme-btn" id="themeToggle">🌓</button>
+    </div>
+
+    <div class="header">
+        <h1>✨ Ultimate Code Editor</h1>
+        <p class="subtitle">Edit and run HTML, CSS & JavaScript in real-time</p>
+        <div class="controls">
+            <button class="btn run-btn" id="runButton">
+                <i class="fas fa-play"></i> Run Code
+            </button>
+            <button class="btn mode-toggle" id="fullscreenButton">
+                <i class="fas fa-expand"></i> Fullscreen
+            </button>
+        </div>
+    </div>
+
+    <div class="editor-container">
+        <div class="editor-panel">
+            <div class="editor-header">
+                <i class="fab fa-html5"></i> HTML
+            </div>
+            <textarea id="html-code" placeholder="Enter your HTML code here..."><!DOCTYPE html>
+<html>
+<head>
+    <title>Example Page</title>
+    <style>
+        .animated-box {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, #6c5ce7, #e94560);
+            border-radius: 10px;
+            margin: 30px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            animation: pulse 2s infinite, rotate 4s infinite linear;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Hello World! 👋</h1>
+    <p>This is an example of the Ultimate Code Editor</p>
+    
+    <div class="animated-box">Animation!</div>
+    
+    <button onclick="showMessage()" class="cool-btn">Click Me</button>
+    
+    <script>
+        function showMessage() {
+            alert('Button clicked!');
+            document.querySelector('.animated-box').style.background = 'linear-gradient(45deg, #00b894, #0984e3)';
+        }
+    </script>
+</body>
+</html></textarea>
+        </div>
+
+        <div class="editor-panel">
+            <div class="editor-header">
+                <i class="fab fa-css3-alt"></i> CSS
+            </div>
+            <textarea id="css-code" placeholder="Enter your CSS code here...">body {
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    padding: 40px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    margin: 0;
+}
+
+h1 {
+    color: #6c5ce7;
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+p {
+    color: #333;
+    font-size: 1.2rem;
+    max-width: 600px;
+    margin: 0 auto 30px;
+}
+
+.cool-btn {
+    background-color: #e94560;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.cool-btn:hover {
+    background-color: #c1334f;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cool-btn:active {
+    transform: translateY(1px);
+}</textarea>
+        </div>
+
+        <div class="editor-panel">
+            <div class="editor-header">
+                <i class="fab fa-js"></i> JavaScript
+            </div>
+            <textarea id="js-code" placeholder="Enter your JavaScript code here...">// Create particle effect
+document.addEventListener('DOMContentLoaded', function() {
+    const colors = ['#6c5ce7', '#e94560', '#00b894', '#0984e3', '#fdcb6e'];
+    
+    function createParticle(e) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        const size = Math.random() * 15 + 5;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.backgroundColor = color;
+        particle.style.left = `${e.clientX}px`;
+        particle.style.top = `${e.clientY}px`;
+        
+        document.body.appendChild(particle);
+        
+        // Animation
+        const animation = particle.animate([
+            { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+            { transform: `translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px) scale(0)`, opacity: 0 }
+        ], {
+            duration: Math.random() * 1000 + 500,
+            easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+        });
+        
+        animation.onfinish = () => particle.remove();
+    }
+    
+    // Create particles on button clicks
+    document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', createParticle);
+    });
+});</textarea>
+        </div>
+    </div>
+
+    <div class="preview-container">
+        <div class="preview-header">
+            <h2><i class="fas fa-eye"></i> Live Preview</h2>
+            <button class="btn mode-toggle" id="refreshButton">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        <iframe id="preview"></iframe>
+    </div>
+
+    <div class="floating-buttons">
+        <button class="floating-btn" id="scrollTopBtn" title="Scroll to Top">
+            <i class="fas fa-arrow-up"></i>
+        </button>
+        <button class="floating-btn" id="clearBtn" title="Clear Code">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+
+    <script>
+        // Dark/Light mode toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check user preference
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            themeToggle.textContent = '🌞';
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('darkMode', 'enabled');
+                themeToggle.textContent = '🌞';
+            } else {
+                localStorage.setItem('darkMode', 'disabled');
+                themeToggle.textContent = '🌓';
+            }
+        });
+        
+        // Run code function
+        function runCode() {
+            const loader = document.getElementById('loader');
+            loader.classList.add('active');
+            
+            setTimeout(() => {
+                const htmlCode = document.getElementById('html-code').value;
+                const cssCode = document.getElementById('css-code').value;
+                const jsCode = document.getElementById('js-code').value;
+                
+                const previewFrame = document.getElementById('preview');
+                const preview = previewFrame.contentDocument || previewFrame.contentWindow.document;
+                
+                preview.open();
+                preview.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>${cssCode}</style>
+                        <script>${jsCode}<\/script>
+                    </head>
+                    ${htmlCode}
+                    </html>
+                `);
+                preview.close();
+                
+                loader.classList.remove('active');
+            }, 800); // Delay for loading animation
+        }
+        
+        // Button events
+        document.getElementById('runButton').addEventListener('click', runCode);
+        document.getElementById('refreshButton').addEventListener('click', runCode);
+        document.getElementById('fullscreenButton').addEventListener('click', toggleFullscreen);
+        document.getElementById('scrollTopBtn').addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all code?')) {
+                document.getElementById('html-code').value = '';
+                document.getElementById('css-code').value = '';
+                document.getElementById('js-code').value = '';
+            }
+        });
+        
+        // Fullscreen mode
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Fullscreen error: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+        
+        // Run code automatically on page load
+        window.addEventListener('load', () => {
+            setTimeout(runCode, 1000);
+            
+            // Show floating buttons with animation
+            const floatBtns = document.querySelectorAll('.floating-btn');
+            floatBtns.forEach((btn, i) => {
+                setTimeout(() => {
+                    btn.style.opacity = '1';
+                    btn.style.transform = 'translateY(0)';
+                }, 1500 + (i * 200));
+            });
+        });
+        
+        // Initial style for floating buttons
+        document.querySelectorAll('.floating-btn').forEach(btn => {
+            btn.style.opacity = '0';
+            btn.style.transform = 'translateY(20px)';
+        });
+        
+        // Auto-run while typing (with debounce)
+        let timeout;
+        const editors = document.querySelectorAll('textarea');
+        editors.forEach(editor => {
+            editor.addEventListener('input', () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(runCode, 1000);
+            });
+        });
+    </script>
+</body>
+</html>
